@@ -1,7 +1,7 @@
 module Main (main) where
 
-import Wireworld (someFunc)
+import WireWorld (neighborIndexes,  WorldSize(..))
 
 
 main :: IO ()
-main = someFunc
+main = print $ neighborIndexes (WS [5,5]) 11
