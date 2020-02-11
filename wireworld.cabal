@@ -24,6 +24,8 @@ library
   exposed-modules:     WireWorld
                        Prelude
 
+  other-modules:       Data.MultiIntSet
+
   build-depends:       base-noprelude ^>= 4.13.0.0
                      , relude
                      , containers ^>= 0.6

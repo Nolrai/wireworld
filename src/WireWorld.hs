@@ -2,24 +2,33 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
+{-# LANGUAGE RecordWildCards #-}
 
 module WireWorld
   ( World (..)
   , WorldSize (..)
   , dimension
   , neighborIndexes
+  , step
   )
 where
 import Data.Vector.Unboxed as V
-
+import Data.MultiIntSet as MIS
+import Control.Exception (assert)
 
 data World = World
-  { heads :: IntSet
-  , tails :: IntSet
-  , metal :: Vector Bool
+  { metal :: Vector Bool
+  , size :: WorldSize
   }
   deriving stock (Show, Read, Eq)
+
+data WorldState =
+  WorldState
+  { headCells :: IntSet
+  , tailCells :: IntSet
+  }
+  deriving stock (Show, Read, Eq)
+
 
 newtype WorldSize = WS {unWS :: [Int]}
   deriving newtype (Show, Read, Eq)
@@ -42,3 +51,15 @@ neighbors' (_:xs) =
     oldIndex <- neighbors' xs
     offset <- [0,1,-1] --weird order is so we know the first item is 0
     pure $ oldIndex * Prelude.product xs + offset
+
+step :: World -> WorldState -> WorldState
+step (World {..}) (WorldState {..}) =
+  WorldState
+    { tailCells = headCells
+    , headCells =
+      toSetWithFilter
+        (\ value multiplicity -> (metal ! value) && valid multiplicity)
+        (bind (MIS.fromSet headCells) $ Prelude.fromList . neighborIndexes size)
+    }
+  where
+  valid x = assert (x > 0) x < 3
