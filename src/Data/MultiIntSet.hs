@@ -1,9 +1,11 @@
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Data.MultiIntSet
-  (MultiIntSet()
+  (MultiIntSet(..)
   , bind
   , empty
   , fromList
@@ -19,6 +21,7 @@ import GHC.Exts
 import Prelude hiding (empty, map, fromList)
 
 newtype MultiIntSet = MultiIntSet {unMultiIntSet :: IntMap Int}
+  deriving newtype (Eq, Ord, Show, Read)
 
 instance Semigroup MultiIntSet where
   (<>) = add

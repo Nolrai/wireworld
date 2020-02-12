@@ -22,6 +22,7 @@ spec = do
       \ sizeList x ->
         all (\i -> i >= 0 && i < product (unWS sizeList))
           $ neighborIndexes sizeList x
-    xit "produces 3^dim - 1 values" $ HSC.property $
+    it "produces 3^dim - 1 values" $ HSC.property $
       \ sizeList x ->
         (all (>=3) . unWS) sizeList ==> length (neighborIndexes sizeList x) `shouldBe` (3 ^ dimension sizeList) - 1
+
