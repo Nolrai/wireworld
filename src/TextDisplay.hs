@@ -15,6 +15,12 @@ module TextDisplay
     coloredCell,
     FromCell (..),
     Parser,
+    fromRows,
+    parseRow,
+    parseCells,
+    parseMetal,
+    parseSet,
+    Cell (..),
   )
 where
 
@@ -51,7 +57,7 @@ data FromCell a = FromCell {emptyCell :: a, headCell :: a, tailCell :: a, metalC
 
 -- Only used here, in other places this data is split between the World and the WorldState.
 data Cell = EmptyCell | HeadCell | TailCell | MetalCell
-  deriving stock (Enum, Bounded, Ord, Eq)
+  deriving stock (Enum, Bounded, Ord, Eq, Show)
 
 parseWireWorld :: FromCell Text -> Parser (World, WorldState)
 parseWireWorld fc =
@@ -72,11 +78,16 @@ fromRows fc size =
     pure (World {..}, WorldState {..})
 
 parseMetal :: FromCell Text -> Int -> Int -> Parser (UV.Vector Bool)
-parseMetal fc width numRows = UV.map not <$> parseCells EmptyCell fc width numRows
+parseMetal fc width numRows =
+  UV.map not <$> parseCells EmptyCell fc width numRows
 
 parseCells :: Cell -> FromCell Text -> Int -> Int -> Parser (UV.Vector Bool)
-parseCells cell (FromCell {..}) width numRows =
-  V.foldr (<>) mempty <$> V.replicateM numRows ((UV.replicateM width ((== cell) <$> parseCell)) <* eol)
+parseCells cell fc width numRows =
+  V.foldr (<>) mempty <$> V.replicateM numRows (parseRow cell fc width)
+
+parseRow :: Cell -> FromCell Text -> Int -> Parser (UV.Vector Bool)
+parseRow cell FromCell {..} width =
+  UV.replicateM width ((== cell) <$> parseCell) <* eol
   where
     onCell' :: Cell -> Text
     onCell' EmptyCell = emptyCell
@@ -84,7 +95,7 @@ parseCells cell (FromCell {..}) width numRows =
     onCell' TailCell = tailCell
     onCell' MetalCell = metalCell
     parseCellType :: Cell -> Parser Cell
-    parseCellType c = chunk (onCell' c) *> pure c
+    parseCellType c = chunk (onCell' c) $> c
     parseCell :: Parser Cell
     parseCell = choice $ parseCellType <$> [minBound .. maxBound]
 
@@ -102,12 +113,13 @@ printWireWorld :: MonadWriter Text m => FromCell Text -> World -> WorldState -> 
 printWireWorld fc w@World {size} ws =
   do
     tell (show size)
+    tell "\n"
     toRows fc w ws
 
 -- write each row out as a line of text/string/Text
 toRows :: MonadWriter Text m => FromCell Text -> World -> WorldState -> m ()
 toRows fc w@World {..} ws@WorldState {..} =
-  mapM_ (\row -> tell $ mconcatV row <> "/n")
+  mapM_ (\row -> tell $ mconcatV row <> "\n")
     . fmap (fmap $ onCell fc w ws)
     $ rowIndices width (UV.length metal)
   where
@@ -135,10 +147,10 @@ onCell FromCell {..} World {..} WorldState {..} ix
   | otherwise = metalCell
 
 rosetaCell :: IsString s => FromCell s
-rosetaCell = FromCell " " "H" "t" "."
+rosetaCell = FromCell "_" "H" "t" "."
 
 boxCell :: IsString s => FromCell s
-boxCell = FromCell "  " "▓▓" "▒▒" "░░"
+boxCell = FromCell "__" "▓▓" "▒▒" "░░"
 
 coloredCell :: (Pretty s, IsString s) => FromCell s
 coloredCell =

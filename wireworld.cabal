@@ -89,6 +89,9 @@ test-suite wireworld-test
                      , smallcheck
                      , QuickCheck
                      , megaparsec
+                     , hspec-golden
+                     , mtl ^>= 2.2.2
+                     , template-haskell
 
   ghc-options:         -Wall
                        -threaded
