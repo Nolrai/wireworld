@@ -1,47 +1,47 @@
-sudo: true
-language: haskell
+# Choose a build environment
+dist: xenial
+
+# Do not choose a language; we provide our own build tools.
+language: generic
+
+# Caching so the next build will be fast too.
+cache:
+  directories:
+  - $HOME/.stack
+  - "$TRAVIS_BUILD_DIR/.stack-work"
+
+# Ensure necessary system libraries are present
+addons:
+  apt:
+    packages:
+      - libgmp-dev
+
+before_install:
+# Download and unpack the stack executable
+- mkdir -p ~/.local/bin
+- export PATH=$HOME/.local/bin:$PATH
+- travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+
+install:
+# HLint check
+- curl -sSL https://raw.github.com/ndmitchell/neil/master/misc/travis.sh | sh -s -- hlint .
+# Build dependencies
+- stack --no-terminal --install-ghc executable --only-dependencies
+- stack --no-terminal --install-ghc test --only-dependencies
+- stack --no-terminal --install-ghc bench --only-dependencies
+
+script:
+# Build the package, its tests, and its docs and run the tests
+- stack --no-terminal bench --no-run-benchmarks
+- stack --no-terminal test
 
 git:
   depth: 5
 
-cabal: "2.4"
-
 cache:
   directories:
-  - "$HOME/.cabal/store"
   - "$HOME/.stack"
   - "$TRAVIS_BUILD_DIR/.stack-work"
-
-matrix:
-  include:
-  - ghc: 8.8.1
-  
-  - ghc: 8.8.1
-    env: STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
-
-install:
-  # HLint check
-  - curl -sSL https://raw.github.com/ndmitchell/neil/master/misc/travis.sh | sh -s -- hlint .
-
-  - |
-    if [ -z "$STACK_YAML" ]; then
-      ghc --version
-      cabal --version
-      cabal new-update
-      cabal new-build --enable-tests --enable-benchmarks
-    else
-      curl -sSL https://get.haskellstack.org/ | sh
-      stack --version
-      stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks --ghc-options=-Werror
-    fi
-
-script:
-  - |
-    if [ -z "$STACK_YAML" ]; then
-       cabal new-test --enable-tests
-    else
-      stack test --system-ghc
-    fi
 
 notifications:
   email: false
