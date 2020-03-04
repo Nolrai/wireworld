@@ -24,6 +24,7 @@ library
   exposed-modules:     WireWorld
                        Prelude
                        Data.MultiIntSet
+                       TextDisplay
 
   build-depends:       base-noprelude ^>= 4.13.0.0
                      , relude
@@ -78,6 +79,7 @@ test-suite wireworld-test
   other-modules:       WireWorldSpec
                      , Data.MultiIntSetSpec
                      , Test.Utils
+                     , TextDisplaySpec
   build-depends:       base-noprelude ^>= 4.13.0.0
                      , wireworld
                      , relude
