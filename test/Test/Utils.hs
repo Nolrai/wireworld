@@ -1,67 +1,71 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 
-module Test.Utils (prop) where
+module Test.Utils
+  ( prop,
+    xprop,
+  )
+where
 
 import Test.Hspec
 import Test.Hspec.SmallCheck as HSC
-import Test.SmallCheck.Series
-  ( Serial(..)
-  -- , CoSerial(..)
-  -- , newtypeAlts
-  , cons2
-  , getNonNegative
-  , NonNegative (..)
-  , getPositive
-  , Positive
-  , (\/)
-  , getDepth
-  , listM
-  , Series
-  )
+-- , CoSerial(..)
+-- , newtypeAlts
+
 import Test.SmallCheck
-  ( (==>)
-  , over
-  , Property
-  , Testable
+  ( Property,
+    Testable,
+    monadic,
+    over,
   )
-import Data.IntMap as IntMap hiding (singleton)
-import Control.Arrow ((***))
+import Test.SmallCheck.Series
+  ( Serial (..),
+    Series,
+    getDepth,
+    listM,
+  )
 
 testHowMany ::
-  (Show a, Monad m) =>
-  Series m a -> Property m
+  (Show a) =>
+  Series IO a ->
+  Property IO
 testHowMany someSeries =
   over getDepth $
-    \ depth
-      -> testHowMany' $ listM depth someSeries
+    \depth ->
+      monadic $ testHowMany' <$> listM depth someSeries
 
-testHowMany' :: Show a => [a] -> Either String String
+testHowMany' ::
+  Show a => [a] -> Either String String
 testHowMany' values =
-  if howMany > 10 ^ 6
-    then Left $ errorMsg
+  if howMany > ((10 :: Int) ^ (6 :: Int))
+    then Left errorMsg
     else Right $ show values ++ goodMsg
   where
-  howMany :: Int
-  howMany = length values
-  errorMsg, goodMsg :: String
-  errorMsg = "Too many: " ++ show howMany
-  goodMsg = "Okay ammount " ++ show howMany
+    howMany :: Int
+    howMany = length values
+    errorMsg, goodMsg :: String
+    errorMsg = "Too many: " ++ show howMany
+    goodMsg = "Okay ammount " ++ show howMany
 
 prop ::
-  (Monad m, Show a, Serial IO a, Testable m b) =>
-    String ->
-    (a -> m b) ->
-    Spec
+  forall a b.
+  (Show a, Serial IO a, Testable IO b) =>
+  String ->
+  (a -> b) ->
+  Spec
 prop name p =
   describe name $ do
-    it "test how many?" . property $
-      testHowMany (series :: Series m a)
+    it "test how many?" $
+      testHowMany (series :: Series IO a)
     it "actual test" . property $ p
 
 xprop ::
-  (Monad m, Show a, Testable m b) =>
-    String ->
-    (a -> m b) ->
-    Spec
-xprop name p =
+  forall a b.
+  (Show a, Serial IO a, Testable IO b) =>
+  String ->
+  (a -> b) ->
+  Spec
+xprop name _ =
   it name pending
