@@ -1,8 +1,5 @@
-resolver: nightly-2019-12-25
+resolver: lts-15.1
 
 extra-deps:
   - base-noprelude-4.13.0.0
-  - github: hspec/hspec
-    commit: 9f3f4c3
-  - github: hspec/hspec-smallcheck
-    commit: 7963f20
+  - pretty-terminal-0.1.0.0

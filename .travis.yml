@@ -26,12 +26,12 @@ install:
 # HLint check
 - curl -sSL https://raw.github.com/ndmitchell/neil/master/misc/travis.sh | sh -s -- hlint .
 # Build dependencies
-- stack --no-terminal --install-ghc executable --only-dependencies
 - stack --no-terminal --install-ghc test --only-dependencies
 - stack --no-terminal --install-ghc bench --only-dependencies
 
 script:
 # Build the package, its tests, and its docs and run the tests
+- stack --no-terminal build
 - stack --no-terminal bench --no-run-benchmarks
 - stack --no-terminal test
 
