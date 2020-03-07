@@ -1,67 +1,64 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 
-module Test.Utils (prop) where
+module Test.Utils
+  ( prop,
+    xprop,
+    propWithLimit,
+    xpropWithLimit,
+  )
+where
 
 import Test.Hspec
 import Test.Hspec.SmallCheck as HSC
-import Test.SmallCheck.Series
-  ( Serial(..)
-  -- , CoSerial(..)
-  -- , newtypeAlts
-  , cons2
-  , getNonNegative
-  , NonNegative (..)
-  , getPositive
-  , Positive
-  , (\/)
-  , getDepth
-  , listM
-  , Series
-  )
+-- , CoSerial(..)
+-- , newtypeAlts
+
 import Test.SmallCheck
-  ( (==>)
-  , over
-  , Property
-  , Testable
+  ( Testable,
+    over,
   )
-import Data.IntMap as IntMap hiding (singleton)
-import Control.Arrow ((***))
-
-testHowMany ::
-  (Show a, Monad m) =>
-  Series m a -> Property m
-testHowMany someSeries =
-  over getDepth $
-    \ depth
-      -> testHowMany' $ listM depth someSeries
-
-testHowMany' :: Show a => [a] -> Either String String
-testHowMany' values =
-  if howMany > 10 ^ 6
-    then Left $ errorMsg
-    else Right $ show values ++ goodMsg
-  where
-  howMany :: Int
-  howMany = length values
-  errorMsg, goodMsg :: String
-  errorMsg = "Too many: " ++ show howMany
-  goodMsg = "Okay ammount " ++ show howMany
+import Test.SmallCheck.Series
+  ( Serial (..),
+    limit,
+  )
 
 prop ::
-  (Monad m, Show a, Serial IO a, Testable m b) =>
-    String ->
-    (a -> m b) ->
-    Spec
-prop name p =
-  describe name $ do
-    it "test how many?" . property $
-      testHowMany (series :: Series m a)
-    it "actual test" . property $ p
+  forall a b.
+  (Show a, Serial IO a, Testable IO b) =>
+  String ->
+  (a -> b) ->
+  Spec
+prop name = propWithLimit name ((10 :: Int) ^ (6 :: Int))
+
+propWithLimit ::
+  forall a b.
+  (Show a, Serial IO a, Testable IO b) =>
+  String ->
+  Int ->
+  (a -> b) ->
+  Spec
+propWithLimit name nLimit p =
+  describe name
+    $ it "actual test" . property
+    $ over (limit nLimit series) p
 
 xprop ::
-  (Monad m, Show a, Testable m b) =>
-    String ->
-    (a -> m b) ->
-    Spec
-xprop name p =
+  forall a b.
+  (Show a, Serial IO a, Testable IO b) =>
+  String ->
+  (a -> b) ->
+  Spec
+xprop name _ =
   it name pending
+
+xpropWithLimit ::
+  forall a b.
+  (Show a, Serial IO a, Testable IO b) =>
+  String ->
+  Int ->
+  (a -> b) ->
+  Spec
+xpropWithLimit name _ = xprop name
