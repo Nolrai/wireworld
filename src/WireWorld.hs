@@ -13,8 +13,9 @@ module WireWorld
 where
 
 import Control.Exception (assert)
+import qualified Data.IntSet as IntSet
 import Data.MultiIntSet as MIS
-import Data.Vector.Unboxed as V
+import Data.Vector.Unboxed
 
 data World
   = World
@@ -60,13 +61,14 @@ neighbors' (_ : xs) =
     pure $ oldIndex * Prelude.product xs + offset
 
 step :: World -> WorldState -> WorldState
-step World {..} WorldState {..} =
+step World {..} old =
   WorldState
-    { tailCells = headCells,
+    { tailCells = headCells old,
       headCells =
         toSetWithFilter
           (\value multiplicity -> (metal ! value) && valid multiplicity)
-          (bind (MIS.fromSet headCells) $ Prelude.fromList . neighborIndexes size)
+          (bind (MIS.fromSet $ headCells old) $ Prelude.fromList . neighborIndexes size)
+          `IntSet.difference` headCells old
     }
   where
     valid x = assert (x > 0) x < 3
