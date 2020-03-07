@@ -30,6 +30,13 @@ data WorldState
       }
   deriving stock (Show, Read, Eq)
 
+instance Semigroup WorldState where
+  (WorldState headCellsA tailCellsA) <> (WorldState headCellsB tailCellsB) =
+    WorldState (headCellsA <> headCellsB) (tailCellsA <> tailCellsB)
+
+instance Monoid WorldState where
+  mempty = WorldState mempty mempty
+
 newtype WorldSize = WS {unWS :: [Int]}
   deriving newtype (Show, Read, Eq)
 

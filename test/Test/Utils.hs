@@ -6,6 +6,8 @@
 module Test.Utils
   ( prop,
     xprop,
+    propWithLimit,
+    xpropWithLimit,
   )
 where
 
@@ -15,39 +17,13 @@ import Test.Hspec.SmallCheck as HSC
 -- , newtypeAlts
 
 import Test.SmallCheck
-  ( Property,
-    Testable,
-    monadic,
+  ( Testable,
     over,
   )
 import Test.SmallCheck.Series
   ( Serial (..),
-    Series,
-    getDepth,
-    listM,
+    limit,
   )
-
-testHowMany ::
-  (Show a) =>
-  Series IO a ->
-  Property IO
-testHowMany someSeries =
-  over getDepth $
-    \depth ->
-      monadic $ testHowMany' <$> listM depth someSeries
-
-testHowMany' ::
-  Show a => [a] -> Either String String
-testHowMany' values =
-  if howMany > ((10 :: Int) ^ (6 :: Int))
-    then Left errorMsg
-    else Right $ show values ++ goodMsg
-  where
-    howMany :: Int
-    howMany = length values
-    errorMsg, goodMsg :: String
-    errorMsg = "Too many: " ++ show howMany
-    goodMsg = "Okay ammount " ++ show howMany
 
 prop ::
   forall a b.
@@ -55,11 +31,19 @@ prop ::
   String ->
   (a -> b) ->
   Spec
-prop name p =
-  describe name $ do
-    it "test how many?" $
-      testHowMany (series :: Series IO a)
-    it "actual test" . property $ p
+prop name = propWithLimit name ((10 :: Int) ^ (6 :: Int))
+
+propWithLimit ::
+  forall a b.
+  (Show a, Serial IO a, Testable IO b) =>
+  String ->
+  Int ->
+  (a -> b) ->
+  Spec
+propWithLimit name nLimit p =
+  describe name
+    $ it "actual test" . property
+    $ over (limit nLimit series) p
 
 xprop ::
   forall a b.
@@ -69,3 +53,12 @@ xprop ::
   Spec
 xprop name _ =
   it name pending
+
+xpropWithLimit ::
+  forall a b.
+  (Show a, Serial IO a, Testable IO b) =>
+  String ->
+  Int ->
+  (a -> b) ->
+  Spec
+xpropWithLimit name _ = xprop name

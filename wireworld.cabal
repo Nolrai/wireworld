@@ -87,11 +87,13 @@ test-suite wireworld-test
                      , hspec
                      , hspec-smallcheck
                      , smallcheck
-                     , QuickCheck
+                     , hedgehog
+                     , hspec-hedgehog
                      , megaparsec
                      , hspec-golden
                      , mtl ^>= 2.2.2
                      , template-haskell
+                     , vector >= 0.12.1.2
 
   ghc-options:         -Wall
                        -threaded
@@ -107,6 +109,7 @@ test-suite wireworld-test
                        -Wpartial-fields
                        -Wmissing-deriving-strategies
                        -Werror
+                       -Wwarn=redundant-constraints
                        -Wno-orphans
                        -fno-ignore-asserts
 

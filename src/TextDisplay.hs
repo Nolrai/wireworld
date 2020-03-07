@@ -51,7 +51,8 @@ instance Semigroup MyErrorData where
 instance Monoid MyErrorData where
   mempty = Unit
 
-instance ShowErrorComponent MyErrorData
+instance ShowErrorComponent MyErrorData where
+  showErrorComponent _ = ""
 
 data FromCell a = FromCell {emptyCell :: a, headCell :: a, tailCell :: a, metalCell :: a}
 

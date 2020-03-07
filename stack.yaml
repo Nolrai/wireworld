@@ -3,3 +3,4 @@ resolver: lts-15.1
 extra-deps:
   - base-noprelude-4.13.0.0
   - pretty-terminal-0.1.0.0
+  - hspec-hedgehog-0.0.1.1
