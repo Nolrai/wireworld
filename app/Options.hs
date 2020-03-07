@@ -26,7 +26,7 @@ parseOptions =
   subparser
     ( command
         "run"
-        (runCommand `info` (progDesc "load a ww file and run steps"))
+        (runCommand `info` progDesc "load a ww file and run steps")
     )
 
 runCommand :: O.Parser Options
@@ -61,7 +61,7 @@ readCustomStyle = maybeReader $
   \(str :: String) ->
     do
       let text = toText str
-      let emptyCell : headCell : tailCell : metalCell : [] = chop (Text.length text `div` 4) text
+      let [emptyCell, headCell, tailCell, metalCell] = chop (Text.length text `div` 4) text
       pure FromCell {..}
 
 chop chunkSize string =
