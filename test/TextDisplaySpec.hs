@@ -4,6 +4,7 @@
 
 module TextDisplaySpec
   ( spec,
+    parseText,
   )
 where
 
@@ -11,29 +12,15 @@ where
 
 import Control.Arrow (left)
 import Control.Monad.Writer
+import Data.WireWorld (World, WorldState)
 import Language.Haskell.TH.Syntax (Name)
 import Test.Hspec
-import Test.Hspec.Golden
+import Test.Utils
 import Text.Megaparsec
 import TextDisplay
-import WireWorld (World, WorldState)
-
-exampleFilePath :: FilePath
-exampleFilePath = "./data/example.ww"
 
 runParserPretty :: Parser t -> FilePath -> Text -> Either String t
 runParserPretty parser path input = errorBundlePretty `left` runParser parser path input
-
-goldenTextTest :: String -> Text -> Golden Text
-goldenTextTest name actualOutput =
-  Golden
-    { output = actualOutput,
-      encodePretty = toString,
-      writeToFile = writeFileText,
-      readFromFile = readFileText,
-      testName = name,
-      directory = "golden"
-    }
 
 parseText :: Text -> Either String (World, WorldState)
 parseText = runParserPretty (parseWireWorld rosetaCell) exampleFilePath
