@@ -71,4 +71,4 @@ step World {..} old =
           `IntSet.difference` (headCells old `IntSet.union` tailCells old)
     }
   where
-    valid x = assert (x > 0) x < 3
+    valid x = x == 1 || x == 2
