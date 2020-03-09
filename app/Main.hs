@@ -11,9 +11,9 @@ import TextDisplay
 import WireWorld
 
 main :: IO ()
-main = execOptions >>= body
+main = execOptions >>= body >> pure ()
 
-body :: Options -> IO ()
+body :: Options -> IO WorldState
 body RunCommand {file, steps, inputStyle, outputStyle, exit} =
   do
     fileText <- readFileText file

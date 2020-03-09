@@ -12,7 +12,6 @@ module Data.WireWorld
   )
 where
 
-import Control.Exception (assert)
 import qualified Data.IntSet as IntSet
 import Data.MultiIntSet as MIS
 import Data.Vector.Unboxed
