@@ -8,14 +8,14 @@ module Test.Utils
     xprop,
     propWithLimit,
     xpropWithLimit,
+    exampleFilePath,
+    goldenTextTest,
   )
 where
 
 import Test.Hspec
+import Test.Hspec.Golden
 import Test.Hspec.SmallCheck as HSC
--- , CoSerial(..)
--- , newtypeAlts
-
 import Test.SmallCheck
   ( Testable,
     over,
@@ -62,3 +62,17 @@ xpropWithLimit ::
   (a -> b) ->
   Spec
 xpropWithLimit name _ = xprop name
+
+goldenTextTest :: String -> Text -> Golden Text
+goldenTextTest name actualOutput =
+  Golden
+    { output = actualOutput,
+      encodePretty = toString,
+      writeToFile = writeFileText,
+      readFromFile = readFileText,
+      testName = name,
+      directory = "golden"
+    }
+
+exampleFilePath :: FilePath
+exampleFilePath = "./data/example.ww"

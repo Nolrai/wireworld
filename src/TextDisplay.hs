@@ -29,11 +29,11 @@ import Data.IntSet as IntSet hiding (size)
 import Data.List as List
 import Data.Vector as V hiding (mapM_)
 import Data.Vector.Unboxed as UV hiding (mapM_)
+import Data.WireWorld
 import System.Console.Pretty
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
-import WireWorld
 
 type Parser = Parsec MyErrorData Text
 
