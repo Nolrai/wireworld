@@ -21,6 +21,7 @@ module TextDisplay
     parseMetal,
     parseSet,
     Cell (..),
+    sizeToWidth,
   )
 where
 
@@ -70,7 +71,7 @@ parseWireWorld fc =
 fromRows :: FromCell Text -> WorldSize -> Parser (World, WorldState)
 fromRows fc size =
   do
-    let (width :: Int) : _ = List.reverse $ unWS size
+    let width = sizeToWidth size
     let (numEntries :: Int) = List.product $ unWS size
     let (numRows :: Int, 0 :: Int) = numEntries `divMod` width
     metal <- lookAhead $ parseMetal fc width numRows
@@ -122,10 +123,13 @@ toRows :: MonadWriter Text m => FromCell Text -> World -> WorldState -> m ()
 toRows fc w@World {..} ws@WorldState {..} =
   mapM_ (\row -> tell $ mconcatV row <> "\n")
     . fmap (fmap $ onCell fc w ws)
-    $ rowIndices width (UV.length metal)
+    $ rowIndices (sizeToWidth size) (UV.length metal)
+
+sizeToWidth :: WorldSize -> Int
+sizeToWidth (WS sizeList) = width
   where
     width :: Int
-    (width : _) = List.reverse $ unWS size
+    (width : _) = List.reverse sizeList
 
 -- monoid up a vector of values into a single value
 mconcatV :: Monoid m => V.Vector m -> m
