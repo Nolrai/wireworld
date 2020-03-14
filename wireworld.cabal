@@ -35,8 +35,10 @@ library
                      , pretty-terminal
                      , megaparsec
                      , text
-                     , linear
+                     , with-utf8
+
   default-language:    Haskell2010
+
   ghc-options:         -Wall
                        -Wincomplete-uni-patterns
                        -Wincomplete-record-updates
@@ -55,6 +57,7 @@ executable wireworld
   hs-source-dirs:      app
   main-is:             Main.hs
   other-modules:       Options
+                     , Genetic
 
   build-depends:       base-noprelude ^>= 4.13.0.0
                      , wireworld
@@ -64,6 +67,11 @@ executable wireworld
                      , mtl ^>= 2.2.2
                      , text ^>= 1.2.4.0
                      , moo
+                     , linear
+                     , mtl
+                     , vector
+                     , containers ^>= 0.6
+                     , with-utf8
 
   ghc-options:         -Wall
                        -threaded
@@ -109,6 +117,7 @@ test-suite wireworld-test
                      , mtl ^>= 2.2.2
                      , template-haskell
                      , vector >= 0.12.1.2
+                     , with-utf8
 
   ghc-options:         -Wall
                        -threaded
@@ -141,6 +150,7 @@ benchmark wireworld-benchmark
                      , wireworld
                      , relude
                      , megaparsec
+                     , with-utf8
 
   ghc-options:         -Wall
                        -threaded

@@ -9,6 +9,7 @@ module Data.WireWorld
     dimension,
     neighborIndexes,
     step,
+    numEntries,
   )
 where
 
@@ -42,6 +43,9 @@ newtype WorldSize = WS {unWS :: [Int]}
 
 dimension :: WorldSize -> Int
 dimension (WS sizeList) = Prelude.length sizeList
+
+numEntries :: WorldSize -> Int
+numEntries (WS sizeList) = Prelude.product sizeList
 
 -- This leads to a slightly wierd topology at the edges but I don't care
 neighborIndexes :: WorldSize -> Int -> [Int]

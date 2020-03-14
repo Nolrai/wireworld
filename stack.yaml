@@ -4,5 +4,7 @@ extra-deps:
   - base-noprelude-4.13.0.0
   - pretty-terminal-0.1.0.0
   - hspec-hedgehog-0.0.1.1
-  - moo-1.2
+  - github: nolrai/moo
+    commit: 0b60d8a74a22347e0868a9e64391b6d64fc65543
   - gray-code-0.3.1
+  - with-utf8-1.0.0.0

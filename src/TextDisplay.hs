@@ -72,8 +72,7 @@ fromRows :: FromCell Text -> WorldSize -> Parser (World, WorldState)
 fromRows fc size =
   do
     let width = sizeToWidth size
-    let (numEntries :: Int) = List.product $ unWS size
-    let (numRows :: Int, 0 :: Int) = numEntries `divMod` width
+    let (numRows :: Int, 0 :: Int) = numEntries size `divMod` width
     metal <- lookAhead $ parseMetal fc width numRows
     headCells <- lookAhead $ parseSet HeadCell fc width numRows
     tailCells <- parseSet TailCell fc width numRows
