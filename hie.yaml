@@ -1,0 +1,16 @@
+cradle:
+  multi:
+    - path: "./src"
+      config: {cradle: {stack: {component: "wireworld"}}}
+    - path: "./test"
+      config:
+        cradle:
+          stack: {component: "wireworld:wireworld-test"}
+    - path: "./app"
+      config:
+        cradle:
+          stack: {component: "wireworld:application:wireworld"}
+    - path: "./benchmark"
+      config:
+        cradle:
+          stack: {component: "wireworld:wireworld-benchmark"}

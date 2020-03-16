@@ -8,6 +8,7 @@ module Options
     Options (..),
     RCO (..),
     ECO (..),
+    GCO (..),
   )
 where
 
@@ -47,7 +48,8 @@ data GCO where
       gco_generations :: Int,
       gco_dataWidth :: Int,
       gco_period :: Int,
-      gco_maxDelay :: Int
+      gco_maxDelay :: Int,
+      gco_outputStyle :: FromCell Text
     } ->
     GCO
 
@@ -70,14 +72,46 @@ parseOptions =
           ( (Eval <$> evalOptions)
               `info` progDesc "load a ww file and run it on test input"
           )
+        <> command
+          "evolve"
+          ( (Evolve <$> evolveOptions)
+              `info` progDesc "evolve ww metal to run an op."
+          )
     )
 
-evolveOptions :: O.Parser EvCO
+evolveOptions :: O.Parser GCO
 evolveOptions =
-  EvCO
+  GCO
+    <$> popSizeParser
+    <*> generationsParser
     <*> dataWidthParser
     <*> periodParser
     <*> maxDelayParser
+    <*> outputStyleParser
+
+popSizeParser :: O.Parser Int
+popSizeParser =
+  option
+    auto
+    ( short 'p'
+        <> long "pop-size"
+        <> metavar "INT"
+        <> help "The number of genomes in the pool at once"
+        <> value 100
+        <> showDefault
+    )
+
+generationsParser :: O.Parser Int
+generationsParser =
+  option
+    auto
+    ( short 'g'
+        <> long "generations"
+        <> metavar "INT"
+        <> help "The number of generations to run the evolution for"
+        <> value 100
+        <> showDefault
+    )
 
 evalOptions :: O.Parser ECO
 evalOptions =

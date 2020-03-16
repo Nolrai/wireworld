@@ -26,6 +26,7 @@ library
                        Data.MultiIntSet
                        TextDisplay
                        Data.WireWorld
+                       Genetic
 
   build-depends:       base-noprelude ^>= 4.13.0.0
                      , relude
@@ -36,6 +37,11 @@ library
                      , megaparsec
                      , text
                      , with-utf8
+                     , lens
+                     , linear
+                     , moo
+
+
 
   default-language:    Haskell2010
 
@@ -52,12 +58,12 @@ library
                        -Werror
                        -Wwarn=incomplete-uni-patterns
                        -Wwarn=redundant-constraints
+                       -Wno-deprecations
 
 executable wireworld
   hs-source-dirs:      app
   main-is:             Main.hs
   other-modules:       Options
-                     , Genetic
 
   build-depends:       base-noprelude ^>= 4.13.0.0
                      , wireworld
@@ -68,10 +74,10 @@ executable wireworld
                      , text ^>= 1.2.4.0
                      , moo
                      , linear
-                     , mtl
                      , vector
                      , containers ^>= 0.6
                      , with-utf8
+                     , lens
 
   ghc-options:         -Wall
                        -threaded
@@ -102,6 +108,7 @@ test-suite wireworld-test
                      , Test.Utils
                      , TextDisplaySpec
                      , Data.WireWorldSpec
+                     , GeneticSpec
 
   build-depends:       base-noprelude ^>= 4.13.0.0
                      , wireworld

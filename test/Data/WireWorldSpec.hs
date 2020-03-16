@@ -65,7 +65,7 @@ instance (Monad m) => Serial m (World, WorldState) where
           go k (x : forward) backward = go (k - 1) forward (x : backward)
           go k [] backward = go k (reverse backward) [] --this shouldn't happen but..
 
-validState :: HasCallStack => World -> WorldState -> Bool
+validState :: World -> WorldState -> Bool
 validState World {..} WorldState {..} =
   allInSet headCells isValidIx && allInSet tailCells isValidIx && IntSet.null (IntSet.intersection headCells tailCells)
   where

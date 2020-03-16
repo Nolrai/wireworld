@@ -22,6 +22,7 @@ module TextDisplay
     parseSet,
     Cell (..),
     sizeToWidth,
+    toIntVector,
   )
 where
 
@@ -143,7 +144,7 @@ rowIndices width end = go 0
       | otherwise = [V.enumFromTo n (end - 1)]
 
 -- "prints" the cell at index ix
-onCell :: FromCell a -> World -> WorldState -> Int -> a
+onCell :: HasCallStack => FromCell a -> World -> WorldState -> Int -> a
 onCell FromCell {..} World {..} WorldState {..} ix
   | not (metal UV.! ix) = emptyCell
   | ix `member` headCells = headCell
@@ -163,3 +164,6 @@ coloredCell =
     (color Red "██")
     (color Blue "██")
     (color Yellow "██")
+
+toIntVector :: UV.Vector Bool -> UV.Vector Int
+toIntVector = UV.map (bool 0 1)

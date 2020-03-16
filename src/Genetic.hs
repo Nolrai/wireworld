@@ -3,15 +3,23 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Genetic
   ( runWithTestInputs,
     genetic,
+    scoreGenome,
+    scoreResult,
+    expectedOutput,
+    mkWorld,
+    unMkWorld,
+    initialize,
   )
 where
 
+import Control.Lens (view)
 import Control.Monad.RWS
-import Control.Monad.Writer
 import Data.IntSet as IntSet hiding (size)
 import Data.List as List hiding (union)
 import Data.Vector.Unboxed as UV hiding (modify)
@@ -89,7 +97,12 @@ readWriteTestInput period dataWidth stepNumber =
   readOutputs >> writeInputs (testInput period dataWidth stepNumber)
 
 runWithTestInputs ::
-  Int -> Int -> Int -> World -> WorldState -> [Vector Bool]
+  Int ->
+  Int ->
+  Int ->
+  World ->
+  WorldState ->
+  [Vector Bool]
 runWithTestInputs period dataWidth maxDelay world worldState =
   snd $
     evalRWS
@@ -109,10 +122,14 @@ expectedOutput period dataWidth op =
   op . testInput period dataWidth
     <$> (UV.toList . UV.enumFromN 0 $ period * 2 ^ dataWidth)
 
-scoreResult :: [Vector Bool] -> [Vector Bool] -> (Int, Int)
-scoreResult expected output = (wrongness, delay)
+scoreResult :: [Vector Bool] -> [Vector Bool] -> V2 Int
+scoreResult expected output = fmap (+ 1) (V2 wrongness delay)
   where
-    wrongness = hammingDistance trimedOutput trimedExpected
+    wrongness, delay :: Int
+    wrongness =
+      hammingDistance
+        (trimedOutput <> List.repeat mempty)
+        trimedExpected
     delay = List.length cutOutput - List.length cutExpected
     (cutExpected, trimedExpected) = List.span (UV.all (== False)) expected
     (cutOutput, trimedOutput) = List.span (UV.all (== False)) output
@@ -124,21 +141,50 @@ scoreGenome ::
   Int ->
   WorldSize ->
   Genome Bool ->
-  (Int, Int)
+  V2 Int
 scoreGenome op period dataWidth maxDelay ws genome =
-  scoreResult
-    ( expectedOutput
-        period
-        dataWidth
-        op
-    )
-    ( runWithTestInputs
-        period
-        dataWidth
-        maxDelay
-        (World {size = ws, metal = UV.fromList genome})
-        mempty
-    )
+  let opt f = f period dataWidth
+      expected = opt expectedOutput op
+      result =
+        opt runWithTestInputs maxDelay (mkWorld ws genome) mempty
+   in scoreResult expected result
+
+mkWorld :: WorldSize -> Genome Bool -> World
+mkWorld ws genome =
+  World {size = ws, metal = UV.fromList $ addEdges genome}
+  where
+    addEdges :: Genome Bool -> Genome Bool
+    addEdges g =
+      intercalate [False] (splitEvery (sizeToWidth ws - 1) g)
+        <> [False] -- intercalate doesn't put a [False] at the end of the last row.
+        <> List.replicate (sizeToWidth ws) False
+
+unMkWorld :: World -> Genome Bool
+unMkWorld World {size, metal} = removeEdges (UV.toList metal)
+  where
+    removeEdges =
+      List.concat
+        . List.init
+        . fmap List.init
+        . splitEvery (sizeToWidth size)
+
+toMultiObjectiveProblem ::
+  (Vector Bool -> Vector Bool) ->
+  Int ->
+  Int ->
+  Int ->
+  WorldSize ->
+  MultiObjectiveProblem (Genome Bool -> Double)
+toMultiObjectiveProblem op period dataWidth maxDelay ws =
+  [ (Minimizing, fromIntegral . wrongness),
+    (Minimizing, fromIntegral . delay)
+  ]
+  where
+    wrongness, delay :: Genome Bool -> Int
+    wrongness = view _x . scoreFunction
+    delay = view _y . scoreFunction
+    scoreFunction :: Genome Bool -> V2 Int
+    scoreFunction = scoreGenome op period dataWidth maxDelay ws
 
 geneticStep ::
   (Vector Bool -> Vector Bool) ->
@@ -149,40 +195,44 @@ geneticStep ::
   StepGA Rand Bool
 geneticStep op period dataWidth maxDelay ws =
   stepNSGA2bt
-    ( [(Minimizing, fromIntegral . wrongness), (Minimizing, fromIntegral . delay)] ::
-        MultiObjectiveProblem (Genome Bool -> Double)
-    )
+    (toMultiObjectiveProblem op period dataWidth maxDelay ws)
     (onePointCrossover 0.1)
-    (pointMutate 0.1)
+    mutate
   where
-    wrongness, delay :: Genome Bool -> Int
-    wrongness = fst . scoreFunction
-    delay = snd . scoreFunction
-    scoreFunction :: Genome Bool -> (Int, Int)
-    scoreFunction = scoreGenome op period dataWidth maxDelay ws
+    mutate =
+      constFrequencyMutate @Double 2.0 >=> asymmetricMutate 0.02 0.05
 
 orStep :: StepGA Rand Bool
-orStep =
-  geneticStep (UV.singleton . UV.or) 5 3 20 boardSize
+orStep = applyDefault geneticStep
+
+applyDefault ::
+  ( (Vector Bool -> Vector Bool) ->
+    Int ->
+    Int ->
+    Int ->
+    WorldSize ->
+    a
+  ) ->
+  a
+applyDefault f = f (UV.singleton . UV.or) 5 3 10 boardSize
 
 boardSize :: WorldSize
-boardSize = WS [10, 10]
+boardSize = WS [5, 5]
 
 initialize :: Int -> Rand [Genome Bool]
-initialize popSize = getRandomBinaryGenomes popSize (numEntries boardSize)
+initialize popSize =
+  getRandomBinaryGenomes popSize $
+    numEntries smallerSize
+  where
+    smallerSize = WS . fmap (\x -> x - 1) . unWS $ boardSize
 
-genetic :: Int -> Int -> IO ()
+genetic :: Int -> Int -> IO [(World, [Objective])]
 genetic generations popSize =
   do
-    result <-
-      runGA (initialize popSize) $
-        loop (Generations generations) orStep
-    let (winner, score) : _ = result
-    print score
-    text <-
-      execWriterT $
-        printWireWorld
-          coloredCell
-          (World {size = boardSize, metal = UV.fromList winner})
-          mempty
-    putTextLn text
+    result <- runGA (initialize popSize) $ loop (Generations generations) orStep
+    pure $ first (mkWorld boardSize) <$> reScore (fst <$> result)
+  where
+    reScore :: [Genome Bool] -> [(Genome Bool, [Objective])]
+    reScore = evalAllObjectives problems
+    problems :: MultiObjectiveProblem (Genome Bool -> Double)
+    problems = applyDefault toMultiObjectiveProblem
