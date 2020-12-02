@@ -123,13 +123,15 @@ expectedOutput period dataWidth op =
     <$> (UV.toList . UV.enumFromN 0 $ period * 2 ^ dataWidth)
 
 scoreResult :: [Vector Bool] -> [Vector Bool] -> V2 Int
-scoreResult expected output = fmap (+ 1) (V2 wrongness delay)
+scoreResult expected output = fmap (+ 1) (V2 wrongness signCorrectedDelay)
   where
+    signCorrectedDelay :: Int
+    signCorrectedDelay = if delay < 0 then maxBound else delay
     wrongness, delay :: Int
     wrongness =
       hammingDistance
-        (trimedOutput <> List.repeat mempty)
-        trimedExpected
+        (trimedOutput <> List.replicate delay mempty)
+        (trimedExpected <> List.replicate (negate delay) mempty)
     delay = List.length cutOutput - List.length cutExpected
     (cutExpected, trimedExpected) = List.span (UV.all (== False)) expected
     (cutOutput, trimedOutput) = List.span (UV.all (== False)) output
@@ -214,10 +216,10 @@ applyDefault ::
     a
   ) ->
   a
-applyDefault f = f (UV.singleton . UV.or) 5 3 10 boardSize
+applyDefault f = f (UV.singleton . UV.and) 5 2 10 boardSize
 
 boardSize :: WorldSize
-boardSize = WS [5, 5]
+boardSize = WS [10, 10]
 
 initialize :: Int -> Rand [Genome Bool]
 initialize popSize =

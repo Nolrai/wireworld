@@ -17,7 +17,7 @@ import Text.Megaparsec as MP
 import TextDisplay
 import WireWorld
 
-main :: HasCallStack => IO ()
+main :: IO ()
 main = withUtf8 (execOptions >>= body)
 
 body :: Options -> IO ()
@@ -39,7 +39,7 @@ body (Eval ECO {..}) =
     mkOutput = runWithTestInputs eco_period eco_dataWidth eco_maxDelay
     mkExpected = expectedOutput eco_period eco_dataWidth op
     op :: Vector Bool -> Vector Bool
-    op = singleton . UV.or
+    op = singleton . UV.and
     mkScore :: WorldSize -> [Bool] -> V2 Int
     mkScore = scoreGenome op eco_period eco_dataWidth eco_maxDelay
 body (Evolve GCO {..}) =
