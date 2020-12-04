@@ -26,6 +26,7 @@ library
                        Data.MultiIntSet
                        TextDisplay
                        Data.WireWorld
+                       Data.MirrorWorld
                        Genetic
 
   build-depends:       base-noprelude ^>= 4.13.0.0
@@ -40,6 +41,7 @@ library
                      , lens
                      , linear
                      , moo
+                     , array
 
 
 

@@ -15,6 +15,7 @@ module Genetic
     mkWorld,
     unMkWorld,
     initialize,
+    writeInputs,
   )
 where
 
