@@ -46,7 +46,7 @@ stepsParser =
     (short 'n' <> long "steps" <> metavar "INT" <> help "the number of steps of simulation to run before exiting/waiting")
 
 styleParser :: Char -> O.Parser (FromCell Text)
-styleParser c = List.foldr (\(f, name) others -> others <|> flag' f (long $ [c] <> name)) (customStyleParser c) styles
+styleParser c = List.foldr (\(f, name) others -> others <|> flag' f (long $ [c] <> name)) customStyleParser styles
 
 inputStyleParser :: O.Parser (FromCell Text)
 inputStyleParser = styleParser 'i'
@@ -55,19 +55,18 @@ outputStyleParser :: O.Parser (FromCell Text)
 outputStyleParser = styleParser 'o'
 
 styles :: [(FromCell Text, String)]
-styles = [(rosetaCell, "roseta"), (boxCell, "box"), (coloredCell, "color")]
+styles = [(rosettaCell, "rosetta"), (boxCell, "box"), (coloredCell, "color")]
 
-customStyleParser :: Char -> O.Parser (FromCell Text)
-customStyleParser _ = option readCustomStyle (short 'c' <> long "custom")
+customStyleParser :: O.Parser (FromCell Text)
+customStyleParser = option readCustomStyle (short 'c' <> long "custom")
 
 readCustomStyle :: ReadM (FromCell Text)
 readCustomStyle = maybeReader $
-  \(styleString :: String) ->
+  \(string :: String) ->
     do
-      let text = toText styleString
-      case chop (Text.length text `div` 4) text of
-        [emptyCell, headCell, tailCell, metalCell] -> pure FromCell {..}
-        _ -> fail ""
+      let text = toText string
+      let [emptyCell, headCell, tailCell, metalCell] = chop (Text.length text `div` 4) text
+      pure FromCell {..}
 
 chop :: Int -> Text -> [Text]
 chop chunkSize string =

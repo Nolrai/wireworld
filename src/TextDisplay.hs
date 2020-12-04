@@ -10,7 +10,7 @@ module TextDisplay
   ( parseWireWorld,
     printWireWorld,
     onCell,
-    rosetaCell,
+    rosettaCell,
     boxCell,
     coloredCell,
     FromCell (..),
@@ -150,8 +150,8 @@ onCell FromCell {..} World {..} WorldState {..} ix
   | ix `member` tailCells = tailCell
   | otherwise = metalCell
 
-rosetaCell :: IsString s => FromCell s
-rosetaCell = FromCell "_" "H" "t" "."
+rosettaCell :: IsString s => FromCell s
+rosettaCell = FromCell "_" "H" "t" "."
 
 boxCell :: IsString s => FromCell s
 boxCell = FromCell "__" "▓▓" "▒▒" "░░"
