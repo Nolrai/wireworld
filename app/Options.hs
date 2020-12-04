@@ -17,8 +17,10 @@ import TextDisplay as TD
 data Options where
   RunCommand :: {file :: FilePath, steps :: Int, inputStyle :: FromCell Text, outputStyle :: FromCell Text, exit :: Maybe (IO a)} -> Options
 
+execOptions :: IO Options
 execOptions = execParser $ parseOptions `info` myInfo
 
+myInfo :: InfoMod a
 myInfo = briefDesc <> progDesc "run a wireworld simulation." <> failureCode (-1)
 
 parseOptions :: O.Parser Options
@@ -33,6 +35,7 @@ runCommand :: O.Parser Options
 runCommand =
   RunCommand <$> fileParser <*> stepsParser <*> inputStyleParser <*> outputStyleParser <*> exitParser
 
+fileParser :: O.Parser FilePath
 fileParser =
   strOption (short 'f' <> long "file" <> metavar "FILEPATH" <> help "The wireworld file to read in" <> action "file")
 
@@ -54,18 +57,22 @@ outputStyleParser = styleParser 'o'
 styles :: [(FromCell Text, String)]
 styles = [(rosetaCell, "roseta"), (boxCell, "box"), (coloredCell, "color")]
 
-customStyleParser c = option readCustomStyle (short 'c' <> long "custom")
+customStyleParser :: Char -> O.Parser (FromCell Text)
+customStyleParser _ = option readCustomStyle (short 'c' <> long "custom")
 
 readCustomStyle :: ReadM (FromCell Text)
 readCustomStyle = maybeReader $
-  \(str :: String) ->
+  \(styleString :: String) ->
     do
-      let text = toText str
-      let [emptyCell, headCell, tailCell, metalCell] = chop (Text.length text `div` 4) text
-      pure FromCell {..}
+      let text = toText styleString
+      case chop (Text.length text `div` 4) text of
+        [emptyCell, headCell, tailCell, metalCell] -> pure FromCell {..}
+        _ -> fail ""
 
+chop :: Int -> Text -> [Text]
 chop chunkSize string =
   let (here, there) = Text.splitAt chunkSize string
    in here : chop chunkSize there
 
+exitParser :: O.Parser (Maybe (IO Text))
 exitParser = flag (Just getLine) Nothing (short 'e' <> long "exit")
