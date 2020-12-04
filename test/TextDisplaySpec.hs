@@ -23,7 +23,7 @@ runParserPretty :: Parser t -> FilePath -> Text -> Either String t
 runParserPretty parser path input = errorBundlePretty `left` runParser parser path input
 
 parseText :: Text -> Either String (World, WorldState)
-parseText = runParserPretty (parseWireWorld rosetaCell) exampleFilePath
+parseText = runParserPretty (parseWireWorld rosettaCell) exampleFilePath
 
 spec :: Spec
 spec =
@@ -32,7 +32,7 @@ spec =
       describe "parseRow"
         $ it "parses an example row"
         $ const
-        $ runParserPretty (parseRow EmptyCell rosetaCell 12) "test" "tH........._\r\n"
+        $ runParserPretty (parseRow EmptyCell rosettaCell 12) "test" "tH........._\r\n"
           `shouldSatisfy` isRight
       describe "parseWireWorld"
         $ it "parses the example file"
@@ -43,7 +43,7 @@ spec =
 
 printWireWorldTests :: SpecWith Text
 printWireWorldTests =
-  [(rosetaCell, 'rosetaCell), (boxCell, 'boxCell), (coloredCell, 'coloredCell)]
+  [(rosettaCell, 'rosettaCell), (boxCell, 'boxCell), (coloredCell, 'coloredCell)]
     `forM_` uncurry toTest
   where
     toTest :: FromCell Text -> Name -> SpecWith Text

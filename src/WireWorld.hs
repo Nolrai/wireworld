@@ -11,10 +11,10 @@ import Control.Monad.Writer
 import Data.WireWorld
 import TextDisplay
 
-runSteps :: forall m t. Monad m => (Text -> m ()) -> Maybe (m t) -> FromCell Text -> World -> Int -> WorldState -> m ()
-runSteps write maybePause outputStyle world steps = go steps :: WorldState -> m ()
+runSteps :: forall m t. Monad m => (Text -> m ()) -> Maybe (m t) -> FromCell Text -> World -> Int -> WorldState -> m WorldState
+runSteps write maybePause outputStyle world steps = go steps
   where
-    go :: Int -> WorldState -> m ()
+    go :: Int -> WorldState -> m WorldState
     go n oldState =
       do
         resultText <- execWriterT $ printWireWorld outputStyle world oldState
@@ -22,4 +22,4 @@ runSteps write maybePause outputStyle world steps = go steps :: WorldState -> m 
         let newState = step world oldState
         if n > 0
           then go (n - 1) newState
-          else maybe (pure ()) (>> go steps newState) maybePause
+          else maybe (pure newState) (>> go steps newState) maybePause

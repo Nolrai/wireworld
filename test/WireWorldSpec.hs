@@ -30,5 +30,5 @@ spec =
           it "produces example output" $
             goldenTextTest
               (show 'runSteps <> "_" <> show exampleSteps <> ".ww")
-              (execWriter $ runSteps (tell . (<> "\n")) Nothing rosetaCell w exampleSteps ws)
+              (execWriter $ runSteps (tell . (<> "\n")) Nothing rosettaCell w exampleSteps ws)
         Left err -> it "produces example output" . pendingWith $ "example failed to parse: " <> err
