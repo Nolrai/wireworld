@@ -30,10 +30,8 @@ instance (Monad m) => Serial m WorldSize where
   series =
     do
       (NonNegative rank) <- series
-      l <- replicateM (1 + rank) $
-        do
-          (NonNegative x) <- series
-          pure (3 + x)
+      let mkSize = series >>= (\(NonNegative x) -> pure (3 + x))
+      l <- (:|) <$> mkSize <*> replicateM rank mkSize
       (depth :: Int) <- getDepth
       guard (product l <= depth ^ (2 :: Int))
       pure (WS l)
@@ -65,7 +63,7 @@ instance (Monad m) => Serial m (World, WorldState) where
           go k (x : forward) backward = go (k - 1) forward (x : backward)
           go k [] backward = go k (reverse backward) [] --this shouldn't happen but..
 
-validState :: HasCallStack => World -> WorldState -> Bool
+validState :: World -> WorldState -> Bool
 validState World {..} WorldState {..} =
   allInSet headCells isValidIx && allInSet tailCells isValidIx && IntSet.null (IntSet.intersection headCells tailCells)
   where

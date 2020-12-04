@@ -12,7 +12,9 @@ module Data.WireWorld
   )
 where
 
+-- import Control.Exception (assert)
 import qualified Data.IntSet as IntSet
+import Data.List.NonEmpty as NonEmpty
 import Data.MultiIntSet as MIS
 import Data.Vector.Unboxed
 
@@ -37,18 +39,18 @@ instance Semigroup WorldState where
 instance Monoid WorldState where
   mempty = WorldState mempty mempty
 
-newtype WorldSize = WS {unWS :: [Int]}
+newtype WorldSize = WS {unWS :: NonEmpty Int}
   deriving newtype (Show, Read, Eq)
 
 dimension :: WorldSize -> Int
-dimension (WS sizeList) = Prelude.length sizeList
+dimension (WS sizeList) = NonEmpty.length sizeList
 
 -- This leads to a slightly wierd topology at the edges but I don't care
 neighborIndexes :: WorldSize -> Int -> [Int]
 neighborIndexes sizeList =
   \ix -> (`mod` size) . (ix +) <$> Prelude.drop 1 neighbors
   where
-    neighbors = neighbors' . unWS $ sizeList
+    neighbors = neighbors' . NonEmpty.toList . unWS $ sizeList
     size = Prelude.product . unWS $ sizeList
 
 neighbors' :: [Int] -> [Int]
