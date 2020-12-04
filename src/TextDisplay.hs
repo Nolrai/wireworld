@@ -1,6 +1,5 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -28,7 +27,7 @@ where
 
 import Control.Monad.Writer
 import Data.IntSet as IntSet hiding (size)
-import Data.List as List
+import Data.List.NonEmpty as NonEmpty
 import Data.Vector as V hiding (mapM_)
 import Data.Vector.Unboxed as UV hiding (mapM_)
 import Data.WireWorld
@@ -65,15 +64,18 @@ data Cell = EmptyCell | HeadCell | TailCell | MetalCell
 parseWireWorld :: FromCell Text -> Parser (World, WorldState)
 parseWireWorld fc =
   do
-    worldSize <- WS <$> (chunk "[" *> sepBy1 L.decimal (chunk ",") <* chunk "]" <* eol)
-    fromRows fc worldSize
+    sizeList <- nonEmpty <$> (chunk "[" *> sepBy1 L.decimal (chunk ",") <* chunk "]" <* eol)
+    case sizeList of
+      Nothing -> fail "World size can't be empty"
+      Just worldSize -> fromRows fc (WS worldSize)
 
 -- Yeah we parse the same data three times, I do not care.
 fromRows :: FromCell Text -> WorldSize -> Parser (World, WorldState)
 fromRows fc size =
   do
-    let width = sizeToWidth size
-    let (numRows :: Int, 0 :: Int) = numEntries size `divMod` width
+    let (width :: Int) = NonEmpty.last $ unWS size
+    let (numRows :: Int, remainder :: Int) = numEntries size `divMod` width
+    when (remainder /= 0) (fail "incomplete row!")
     metal <- lookAhead $ parseMetal fc width numRows
     headCells <- lookAhead $ parseSet HeadCell fc width numRows
     tailCells <- parseSet TailCell fc width numRows
@@ -129,7 +131,7 @@ sizeToWidth :: WorldSize -> Int
 sizeToWidth (WS sizeList) = width
   where
     width :: Int
-    (width : _) = List.reverse sizeList
+    (width :| _) = NonEmpty.reverse sizeList
 
 -- monoid up a vector of values into a single value
 mconcatV :: Monoid m => V.Vector m -> m
@@ -144,7 +146,7 @@ rowIndices width end = go 0
       | otherwise = [V.enumFromTo n (end - 1)]
 
 -- "prints" the cell at index ix
-onCell :: HasCallStack => FromCell a -> World -> WorldState -> Int -> a
+onCell :: FromCell a -> World -> WorldState -> Int -> a
 onCell FromCell {..} World {..} WorldState {..} ix
   | not (metal UV.! ix) = emptyCell
   | ix `member` headCells = headCell

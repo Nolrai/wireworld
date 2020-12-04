@@ -203,8 +203,9 @@ readCustomStyle = maybeReader $
   \(string :: String) ->
     do
       let text = toText string
-      let [emptyCell, headCell, tailCell, metalCell] = chop (Text.length text `div` 4) text
-      pure FromCell {..}
+      case chop (Text.length text `div` 4) text of
+        [emptyCell, headCell, tailCell, metalCell] -> pure FromCell {..}
+        _ -> fail $ "custom style found with size " ++ show (Text.length text) ++ " . This must be divisible by 4, but is not."
 
 chop :: Int -> Text -> [Text]
 chop chunkSize string =

@@ -30,10 +30,8 @@ instance (Monad m) => Serial m WorldSize where
   series =
     do
       (NonNegative rank) <- series
-      l <- replicateM (1 + rank) $
-        do
-          (NonNegative x) <- series
-          pure (3 + x)
+      let mkSize = series >>= (\(NonNegative x) -> pure (3 + x))
+      l <- (:|) <$> mkSize <*> replicateM rank mkSize
       (depth :: Int) <- getDepth
       guard (product l <= depth ^ (2 :: Int))
       pure (WS l)

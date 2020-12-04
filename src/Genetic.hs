@@ -219,7 +219,7 @@ applyDefault ::
 applyDefault f = f (UV.singleton . UV.and) 5 2 10 boardSize
 
 boardSize :: WorldSize
-boardSize = WS [10, 10]
+boardSize = WS (10 :| [10])
 
 initialize :: Int -> Rand [Genome Bool]
 initialize popSize =

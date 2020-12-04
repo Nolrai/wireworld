@@ -56,7 +56,6 @@ library
                        -Wpartial-fields
                        -Wmissing-deriving-strategies
                        -Werror
-                       -Wwarn=incomplete-uni-patterns
                        -Wwarn=redundant-constraints
                        -Wno-deprecations
 
@@ -93,7 +92,6 @@ executable wireworld
                        -Wpartial-fields
                        -Wmissing-deriving-strategies
                        -Werror
-                       -Wwarn=incomplete-uni-patterns
                        -Wwarn=redundant-constraints
                        -Wno-orphans
 
@@ -140,7 +138,6 @@ test-suite wireworld-test
                        -Wpartial-fields
                        -Wmissing-deriving-strategies
                        -Werror
-                       -Wwarn=incomplete-uni-patterns
                        -Wwarn=redundant-constraints
                        -Wno-orphans
                        -fno-ignore-asserts
