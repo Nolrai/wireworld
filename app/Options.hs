@@ -6,6 +6,9 @@
 module Options
   ( execOptions,
     Options (..),
+    RCO (..),
+    ECO (..),
+    GCO (..),
   )
 where
 
@@ -15,7 +18,40 @@ import Options.Applicative as O
 import TextDisplay as TD
 
 data Options where
-  RunCommand :: {file :: FilePath, steps :: Int, inputStyle :: FromCell Text, outputStyle :: FromCell Text, exit :: Maybe (IO a)} -> Options
+  Run :: RCO -> Options
+  Eval :: ECO -> Options
+  Evolve :: GCO -> Options
+
+data RCO where
+  RCO ::
+    { rco_file :: FilePath,
+      rco_steps :: Int,
+      rco_inputStyle :: FromCell Text,
+      rco_outputStyle :: FromCell Text,
+      rco_exit :: Maybe (IO a)
+    } ->
+    RCO
+
+data ECO where
+  ECO ::
+    { eco_file :: FilePath,
+      eco_inputStyle :: FromCell Text,
+      eco_dataWidth :: Int,
+      eco_period :: Int,
+      eco_maxDelay :: Int
+    } ->
+    ECO
+
+data GCO where
+  GCO ::
+    { gco_size :: Int,
+      gco_generations :: Int,
+      gco_dataWidth :: Int,
+      gco_period :: Int,
+      gco_maxDelay :: Int,
+      gco_outputStyle :: FromCell Text
+    } ->
+    GCO
 
 execOptions :: IO Options
 execOptions = execParser $ parseOptions `info` myInfo
@@ -28,16 +64,118 @@ parseOptions =
   subparser
     ( command
         "run"
-        (runCommand `info` progDesc "load a ww file and run steps")
+        ( (Run <$> runOptions)
+            `info` progDesc "load a ww file and run steps"
+        )
+        <> command
+          "eval"
+          ( (Eval <$> evalOptions)
+              `info` progDesc "load a ww file and run it on test input"
+          )
+        <> command
+          "evolve"
+          ( (Evolve <$> evolveOptions)
+              `info` progDesc "evolve ww metal to run an op."
+          )
     )
 
-runCommand :: O.Parser Options
-runCommand =
-  RunCommand <$> fileParser <*> stepsParser <*> inputStyleParser <*> outputStyleParser <*> exitParser
+evolveOptions :: O.Parser GCO
+evolveOptions =
+  GCO
+    <$> popSizeParser
+    <*> generationsParser
+    <*> dataWidthParser
+    <*> periodParser
+    <*> maxDelayParser
+    <*> outputStyleParser
+
+popSizeParser :: O.Parser Int
+popSizeParser =
+  option
+    auto
+    ( short 'p'
+        <> long "pop-size"
+        <> metavar "INT"
+        <> help "The number of genomes in the pool at once"
+        <> value 100
+        <> showDefault
+    )
+
+generationsParser :: O.Parser Int
+generationsParser =
+  option
+    auto
+    ( short 'g'
+        <> long "generations"
+        <> metavar "INT"
+        <> help "The number of generations to run the evolution for"
+        <> value 100
+        <> showDefault
+    )
+
+evalOptions :: O.Parser ECO
+evalOptions =
+  ECO
+    <$> fileParser
+      <*> inputStyleParser
+      <*> dataWidthParser
+      <*> periodParser
+      <*> maxDelayParser
+
+dataWidthParser :: O.Parser Int
+dataWidthParser =
+  option
+    auto
+    ( short 'd'
+        <> long "data-width"
+        <> metavar "INT"
+        <> help "The number of bits of input the gate is expecting"
+        <> value 2
+        <> showDefault
+    )
+
+periodParser :: O.Parser Int
+periodParser =
+  option
+    auto
+    ( short 'p'
+        <> long "period"
+        <> metavar "INT"
+        <> help "The number of steps between inputs. Under 3 not recomended."
+        <> value 5
+        <> showDefault
+    )
+
+maxDelayParser :: O.Parser Int
+maxDelayParser =
+  option
+    auto
+    ( short 'm'
+        <> long "max-delay"
+        <> metavar "INT"
+        <> help "The number of steps to keep running after the period after the last input."
+        <> value 5
+        <> showDefault
+    )
+
+runOptions :: O.Parser RCO
+runOptions =
+  RCO
+    <$> fileParser
+    <*> stepsParser
+    <*> inputStyleParser
+    <*> outputStyleParser
+    <*> exitParser
 
 fileParser :: O.Parser FilePath
 fileParser =
-  strOption (short 'f' <> long "file" <> metavar "FILEPATH" <> help "The wireworld file to read in" <> action "file")
+  strOption
+    ( short 'f'
+        <> long "file"
+        <> metavar "FILEPATH"
+        <> help "The wireworld file to read in"
+        <> action "file"
+    )
 
 stepsParser :: O.Parser Int
 stepsParser =
@@ -65,8 +203,9 @@ readCustomStyle = maybeReader $
   \(string :: String) ->
     do
       let text = toText string
-      let [emptyCell, headCell, tailCell, metalCell] = chop (Text.length text `div` 4) text
-      pure FromCell {..}
+      case chop (Text.length text `div` 4) text of
+        [emptyCell, headCell, tailCell, metalCell] -> pure FromCell {..}
+        _ -> fail $ "custom style found with size " ++ show (Text.length text) ++ " . This must be divisible by 4, but is not."
 
 chop :: Int -> Text -> [Text]
 chop chunkSize string =

@@ -20,6 +20,8 @@ module TextDisplay
     parseMetal,
     parseSet,
     Cell (..),
+    sizeToWidth,
+    toIntVector,
   )
 where
 
@@ -72,8 +74,7 @@ fromRows :: FromCell Text -> WorldSize -> Parser (World, WorldState)
 fromRows fc size =
   do
     let (width :: Int) = NonEmpty.last $ unWS size
-    let (numEntries :: Int) = Prelude.product . NonEmpty.toList . unWS $ size
-    let (numRows :: Int, remainder :: Int) = numEntries `divMod` width
+    let (numRows :: Int, remainder :: Int) = numEntries size `divMod` width
     when (remainder /= 0) (fail "incomplete row!")
     metal <- lookAhead $ parseMetal fc width numRows
     headCells <- lookAhead $ parseSet HeadCell fc width numRows
@@ -124,10 +125,13 @@ toRows :: MonadWriter Text m => FromCell Text -> World -> WorldState -> m ()
 toRows fc w@World {..} ws@WorldState {..} =
   mapM_ (\row -> tell $ mconcatV row <> "\n")
     . fmap (fmap $ onCell fc w ws)
-    $ rowIndices width (UV.length metal)
+    $ rowIndices (sizeToWidth size) (UV.length metal)
+
+sizeToWidth :: WorldSize -> Int
+sizeToWidth (WS sizeList) = width
   where
     width :: Int
-    (width :| _) = NonEmpty.reverse $ unWS size
+    (width :| _) = NonEmpty.reverse sizeList
 
 -- monoid up a vector of values into a single value
 mconcatV :: Monoid m => V.Vector m -> m
@@ -162,3 +166,6 @@ coloredCell =
     (color Red "██")
     (color Blue "██")
     (color Yellow "██")
+
+toIntVector :: UV.Vector Bool -> UV.Vector Int
+toIntVector = UV.map (bool 0 1)
