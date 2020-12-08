@@ -6,7 +6,6 @@ module Data.MirrorWorld
     WorldSize (..),
     WorldState (..),
     dimension,
-    neighborIndexes,
     step,
     numEntries,
   )
@@ -19,12 +18,7 @@ import Data.Bifunctor (second)
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
 import Data.List.NonEmpty as NonEmpty
-
-data OneWayDir = N | NE | SE | S | SW | NW
-  deriving stock (Show, Read, Eq, Ord, Ix)
-
-data TwoWayDir = NS | NESW | SENW
-  deriving stock (Eq, Show, Read)
+import HexCoords
 
 type CellState = Array OneWayDir Bool
 
@@ -43,27 +37,20 @@ newtype WorldState
 
 newtype WorldStateB
   = WorldStateB
-      { dotsB :: IntMap CellState
+      { dotsB :: Array (Int, Int) CellState
       }
   deriving stock (Show, Read, Eq)
 
-newtype WorldSize = WS {unWS :: NonEmpty Int}
-  deriving newtype (Show, Read, Eq)
-
-dimension :: WorldSize -> Int
-dimension (WS sizeList) = NonEmpty.length sizeList
-
-numEntries :: WorldSize -> Int
-numEntries (WS sizeList) = Prelude.product sizeList
+data WorldSize = WS {rowSize :: Int, colSize :: Int}
+  deriving stock (Show, Read, Eq, Ord, Ix)
 
 moveDots :: WorldSize -> WorldState -> WorldState
 moveDots size oldState =
   let oldDots = dots oldState
-   in WorldState {dots = oldDots // [(dir, IntSet.map . moveDot dir $ oldDots ! dir) | dir <- range (bounds oldDots)]}
+   in WorldState {dots = oldDots // [(dir, moveDot size dir `IntSet.map` oldDots ! dir) | dir <- range (bounds oldDots)]}
 
-onDir NS = (N, S)
-onDir NESW = (NE, SW)
-onDir SENW = (SE, NW)
+moveDot :: WorldSize -> OneWayDir -> IntSet.Key -> IntSet.Key
+moveDot size dir = toIx size . moveCubical dir . toCubical size
 
 -- Remember the direction is the direction the particles are moving towards! (Not where they come from!)
 mirrorDir NS = (SE, SW) :| [(NE, NW)]
@@ -75,10 +62,18 @@ interact world oldState =
   toWorldState $ interact' world (toWorldStateB oldState)
 
 toWorldStateB :: WorldState -> WorldStateB
-toWorldStateB = error "Stub"
+toWorldStateB WorldState {..} = WorldStateB $
+  array
+    [
+      (ix, array [(dir, ix `mem` (dots ! dir)) | dir <- range [minBound, maxBound])
+      | ix <- bounds dots
+    ]
 
 toWorldState :: WorldStateB -> WorldState
-toWorldState = error "Stub"
+toWorldState WorldStateB {..} = WorldState $
+  array
+    [
+      (dir,
 
 interact' :: World -> WorldStateB -> WorldStateB
 interact' world =

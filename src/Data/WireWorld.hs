@@ -18,6 +18,7 @@ import qualified Data.IntSet as IntSet
 import Data.List.NonEmpty as NonEmpty
 import Data.MultiIntSet as MIS
 import Data.Vector.Unboxed
+import Data.WorldSize
 
 data World
   = World
